@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/ASUS/Downloads/Eksperimen_SML_Ovalia-Dwi-Rahmadani/Workflow-CI/mlruns/0/models/m-50cb5924009e45dfb7f8bbf9d14ac754/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.2
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.12.0
+model_id: m-50cb5924009e45dfb7f8bbf9d14ac754
+model_size_bytes: 1717567
+model_uuid: m-50cb5924009e45dfb7f8bbf9d14ac754
+prompts: null
+run_id: 1b673cb4369a4e9fa57125363907ee2e
+utc_time_created: '2026-05-19 04:40:19.379398'
