@@ -36,15 +36,19 @@ jobs:
         run: |
           rm -rf mlruns mlruns_ci MLProject/mlruns
           mkdir -p mlruns_ci
-          echo "MLFLOW_TRACKING_URI=file:./mlruns_ci" >> $GITHUB_ENV
+          # Gunakan absolute path dengan $GITHUB_WORKSPACE
+          echo "MLFLOW_TRACKING_URI=file:${GITHUB_WORKSPACE}/mlruns_ci" >> $GITHUB_ENV
           echo "MLFLOW_EXPERIMENT_NAME=Default" >> $GITHUB_ENV
 
       - name: Initialize MLflow experiment
         run: |
           python - <<'PY'
           import mlflow
+          import os
 
-          mlflow.set_tracking_uri("file:./mlruns_ci")
+          # Ambil dari environment variable yang sudah menggunakan absolute path
+          tracking_uri = os.environ.get("MLFLOW_TRACKING_URI")
+          mlflow.set_tracking_uri(tracking_uri)
           mlflow.set_experiment("Default")
 
           print("Tracking URI:", mlflow.get_tracking_uri())
@@ -59,8 +63,10 @@ jobs:
         run: |
           python - <<'PY'
           import mlflow
+          import os
 
-          mlflow.set_tracking_uri("file:./mlruns_ci")
+          tracking_uri = os.environ.get("MLFLOW_TRACKING_URI")
+          mlflow.set_tracking_uri(tracking_uri)
 
           experiments = mlflow.search_experiments()
           latest_run = None
