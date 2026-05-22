@@ -1,4 +1,4 @@
-name: Train Model CI
+name: MLflow CI
 
 on:
   push:
@@ -29,9 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow
-          pip install -r MLProject/conda.yaml || true
-          pip install -r MLProject/requirements.txt || true
+          pip install -r requirements.txt
+          pip install mlflow scikit-learn pandas numpy joblib pydrive2
 
       - name: Set MLflow Tracking URI
         run: |
@@ -39,8 +38,7 @@ jobs:
 
       - name: Run mlflow project
         run: |
-          cd MLProject
-          mlflow run . --env-manager=local
+          mlflow run MLProject --env-manager=local
 
       - name: Get latest MLflow run_id
         run: |
@@ -48,7 +46,7 @@ jobs:
           import os
           import mlflow
 
-          mlflow.set_tracking_uri("file:./MLProject/mlruns")
+          mlflow.set_tracking_uri("file:./mlruns")
 
           experiments = mlflow.search_experiments()
           latest_run = None
@@ -59,6 +57,7 @@ jobs:
                   order_by=["start_time DESC"],
                   max_results=1
               )
+
               if not runs.empty:
                   run = runs.iloc[0]
                   if latest_run is None or run["start_time"] > latest_run["start_time"]:
@@ -75,18 +74,24 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install gdown pydrive2
+          pip install pydrive2
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts
           path: |
+            mlruns
             MLProject/mlruns
+            MLProject/artifacts
+            MLProject/*.pkl
+            MLProject/*.joblib
+            MLProject/*.json
             latest_run_id.txt
 
       - name: Upload to Google Drive
-        if: ${{ secrets.GDRIVE_CREDENTIALS != '' }}
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: |
-          echo '${{ secrets.GDRIVE_CREDENTIALS }}' > credentials.json
           python upload_to_gdrive.py
