@@ -30,26 +30,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install mlflow scikit-learn pandas numpy joblib pydrive2
+          pip install mlflow scikit-learn pandas numpy joblib
 
       - name: Prepare MLflow tracking directory
         run: |
-          rm -rf mlruns mlruns_ci MLProject/mlruns
-          mkdir -p mlruns_ci
-          # Gunakan absolute path dengan $GITHUB_WORKSPACE
+          rm -rf mlruns mlruns_ci MLProject/mlruns MLProject/mlruns_ci
+          mkdir -p "${GITHUB_WORKSPACE}/mlruns_ci"
           echo "MLFLOW_TRACKING_URI=file:${GITHUB_WORKSPACE}/mlruns_ci" >> $GITHUB_ENV
           echo "MLFLOW_EXPERIMENT_NAME=Default" >> $GITHUB_ENV
 
       - name: Initialize MLflow experiment
         run: |
           python - <<'PY'
-          import mlflow
           import os
+          import mlflow
 
-          # Ambil dari environment variable yang sudah menggunakan absolute path
-          tracking_uri = os.environ.get("MLFLOW_TRACKING_URI")
-          mlflow.set_tracking_uri(tracking_uri)
-          mlflow.set_experiment("Default")
+          mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+          mlflow.set_experiment(os.environ.get("MLFLOW_EXPERIMENT_NAME", "Default"))
 
           print("Tracking URI:", mlflow.get_tracking_uri())
           print("Experiment initialized successfully")
@@ -62,11 +59,10 @@ jobs:
       - name: Get latest MLflow run_id
         run: |
           python - <<'PY'
-          import mlflow
           import os
+          import mlflow
 
-          tracking_uri = os.environ.get("MLFLOW_TRACKING_URI")
-          mlflow.set_tracking_uri(tracking_uri)
+          mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 
           experiments = mlflow.search_experiments()
           latest_run = None
@@ -98,16 +94,9 @@ jobs:
           name: mlflow-artifacts
           path: |
             mlruns_ci
+            latest_run_id.txt
             MLProject/artifacts
             MLProject/*.pkl
             MLProject/*.joblib
             MLProject/*.json
-            latest_run_id.txt
           if-no-files-found: warn
-
-      - name: Upload to Google Drive
-        env:
-          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-        run: |
-          python upload_to_gdrive.py
