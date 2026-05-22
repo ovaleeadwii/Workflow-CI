@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Run actions/checkout@v3
         uses: actions/checkout@v3
 
       - name: Set up Python 3.12.7
@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12.7"
 
-      - name: Check environment
+      - name: Check Env
         run: |
           python --version
           pip --version
@@ -32,14 +32,14 @@ jobs:
           pip install -r requirements.txt
           pip install mlflow scikit-learn pandas numpy joblib
 
-      - name: Prepare MLflow tracking directory
+      - name: Set MLflow Tracking URI
         run: |
           rm -rf mlruns mlruns_ci MLProject/mlruns MLProject/mlruns_ci
           mkdir -p "${GITHUB_WORKSPACE}/mlruns_ci"
           echo "MLFLOW_TRACKING_URI=file:${GITHUB_WORKSPACE}/mlruns_ci" >> $GITHUB_ENV
           echo "MLFLOW_EXPERIMENT_NAME=Default" >> $GITHUB_ENV
 
-      - name: Initialize MLflow experiment
+      - name: Run mlflow project
         run: |
           python - <<'PY'
           import os
@@ -52,12 +52,8 @@ jobs:
           print("Experiment initialized successfully")
           PY
 
-      - name: Run MLflow project
-        run: |
           mlflow run MLProject --env-manager=local
 
-      - name: Get latest MLflow run_id
-        run: |
           python - <<'PY'
           import os
           import mlflow
@@ -87,6 +83,15 @@ jobs:
           else:
               raise RuntimeError("No MLflow run found")
           PY
+
+      - name: Install Python dependencies
+        run: |
+          pip install google-api-python-client google-auth google-auth-httplib2
+
+      - name: Upload to Google Drive
+        run: |
+          echo "Google Drive upload skipped because GDRIVE_CREDENTIALS is not configured yet."
+          echo "MLflow artifacts will be saved using GitHub Actions artifact instead."
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
