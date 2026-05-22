@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Run actions/checkout@v3
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python 3.12.7
@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12.7"
 
-      - name: Check Env
+      - name: Check environment
         run: |
           python --version
           pip --version
@@ -32,18 +32,32 @@ jobs:
           pip install -r requirements.txt
           pip install mlflow scikit-learn pandas numpy joblib pydrive2
 
-      - name: Set MLflow Tracking URI
+      - name: Prepare MLflow tracking directory
         run: |
-           echo "MLFLOW_TRACKING_URI=file:./mlruns_ci" >> $GITHUB_ENV
+          rm -rf mlruns mlruns_ci MLProject/mlruns
+          mkdir -p mlruns_ci
+          echo "MLFLOW_TRACKING_URI=file:./mlruns_ci" >> $GITHUB_ENV
+          echo "MLFLOW_EXPERIMENT_NAME=Default" >> $GITHUB_ENV
 
-      - name: Run mlflow project
+      - name: Initialize MLflow experiment
+        run: |
+          python - <<'PY'
+          import mlflow
+
+          mlflow.set_tracking_uri("file:./mlruns_ci")
+          mlflow.set_experiment("Default")
+
+          print("Tracking URI:", mlflow.get_tracking_uri())
+          print("Experiment initialized successfully")
+          PY
+
+      - name: Run MLflow project
         run: |
           mlflow run MLProject --env-manager=local
 
       - name: Get latest MLflow run_id
         run: |
           python - <<'PY'
-          import os
           import mlflow
 
           mlflow.set_tracking_uri("file:./mlruns_ci")
@@ -69,12 +83,8 @@ jobs:
               with open("latest_run_id.txt", "w") as f:
                   f.write(run_id)
           else:
-              print("No MLflow run found")
+              raise RuntimeError("No MLflow run found")
           PY
-
-      - name: Install Python dependencies
-        run: |
-          pip install pydrive2
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
@@ -82,12 +92,12 @@ jobs:
           name: mlflow-artifacts
           path: |
             mlruns_ci
-            MLProject/mlruns
             MLProject/artifacts
             MLProject/*.pkl
             MLProject/*.joblib
             MLProject/*.json
             latest_run_id.txt
+          if-no-files-found: warn
 
       - name: Upload to Google Drive
         env:
