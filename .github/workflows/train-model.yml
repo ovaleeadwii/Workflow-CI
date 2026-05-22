@@ -34,7 +34,7 @@ jobs:
 
       - name: Set MLflow Tracking URI
         run: |
-          echo "MLFLOW_TRACKING_URI=file:./mlruns" >> $GITHUB_ENV
+           echo "MLFLOW_TRACKING_URI=file:./mlruns_ci" >> $GITHUB_ENV
 
       - name: Run mlflow project
         run: |
@@ -46,7 +46,7 @@ jobs:
           import os
           import mlflow
 
-          mlflow.set_tracking_uri("file:./mlruns")
+          mlflow.set_tracking_uri("file:./mlruns_ci")
 
           experiments = mlflow.search_experiments()
           latest_run = None
@@ -81,7 +81,7 @@ jobs:
         with:
           name: mlflow-artifacts
           path: |
-            mlruns
+            mlruns_ci
             MLProject/mlruns
             MLProject/artifacts
             MLProject/*.pkl
